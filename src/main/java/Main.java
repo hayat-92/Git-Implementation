@@ -8,7 +8,6 @@ public class Main {
     static RequestHandler handler = new RequestHandler();
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Hello, world!************ " + Arrays.toString(args));
         final var command = args[0];
         switch (command) {
             case "init" -> handler.init();

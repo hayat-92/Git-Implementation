@@ -74,7 +74,7 @@ public class Git {
 
         var head = git.getHeadFile();
         head.createNewFile();
-        Files.write(head.toPath(), "ref: refs/heads/master".getBytes());
+        Files.write(head.toPath(), "ref: refs/heads/master\n".getBytes());
 
         return git;
     }

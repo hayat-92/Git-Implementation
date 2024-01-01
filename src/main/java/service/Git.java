@@ -1,9 +1,9 @@
 package service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import service.objects.Object;
+import service.types.ObjectType;
+
+import java.io.*;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -65,7 +65,7 @@ public class Git {
             }
 
             var objectLength = Integer.parseInt(builder.toString());
-            return inflaterInputStream.readNBytes(objectLength);
+            return inflaterInputStream.readAllBytes();
         }
     }
 
@@ -136,5 +136,94 @@ public class Git {
         }
         return hash;
 
+    }
+
+    public String writeOject(service.objects.Object object) throws IOException, NoSuchAlgorithmException {
+        var objectType = ObjectType.byClass(object.getClass());
+        var tempPath = Files.createTempFile("temp-", ".temp");
+
+        try {
+            try (
+                    var outputStream = Files.newOutputStream(tempPath);
+                    var dataOutputStream = new DataOutputStream(outputStream);
+            ) {
+                objectType.serialize(object, dataOutputStream);
+            }
+
+            var length = Files.size(tempPath);
+            var lengthBytes = String.valueOf(length).getBytes();
+
+            var message = MessageDigest.getInstance("SHA-1");
+            message.update(objectType.getName().getBytes());
+            message.update(SPACE);
+            message.update(lengthBytes);
+            message.update(NULL);
+
+            try (
+                    var inputStream = Files.newInputStream(tempPath);
+            ) {
+                var buffer = new byte[1024];
+                int read;
+                while ((read = inputStream.read(buffer)) != -1) {
+                    message.update(buffer, 0, read);
+                }
+            }
+
+
+            var hashBytes = message.digest();
+            var hash = HexFormat.of().formatHex(hashBytes);
+            var firstTwo = hash.substring(0, 2);
+            var firstTwoDirectory = new File(getObjectsDirectory(), firstTwo);
+            firstTwoDirectory.mkdirs();
+            var rest = hash.substring(2);
+            var restFile = new File(firstTwoDirectory, rest);
+
+            try (
+                    var outputStream = Files.newOutputStream(restFile.toPath());
+                    var deflaterOutputStream = new DeflaterOutputStream(outputStream);
+                    var inputStream = Files.newInputStream(tempPath);
+            ) {
+                deflaterOutputStream.write(OBJECT_TYPE_BLOB);
+                deflaterOutputStream.write(SPACE);
+                deflaterOutputStream.write(lengthBytes);
+                deflaterOutputStream.write(NULL);
+                inputStream.transferTo(deflaterOutputStream);
+            }
+
+            return hash;
+        } finally {
+            Files.deleteIfExists(tempPath);
+        }
+
+
+    }
+
+    public service.objects.Object getObject(String hash) throws IOException, NoSuchAlgorithmException {
+        var firstTwo = hash.substring(0, 2);
+        var rest = hash.substring(2);
+
+        var file = Paths.get(getObjectsDirectory().getPath(), firstTwo, rest).toFile();
+
+        try (
+                var inputStream = new FileInputStream(file);
+                var inflaterInputStream = new InflaterInputStream(inputStream);
+        ) {
+            var builder = new StringBuilder();
+
+            int value;
+            while ((value = inflaterInputStream.read()) != -1 && value != ' ') {
+                builder.append((char) value);
+            }
+
+            var type = ObjectType.byName(builder.toString());
+
+            builder = new StringBuilder();
+            while ((value = inflaterInputStream.read()) != -1 && value != 0) {
+                builder.append((char) value);
+            }
+
+            var objectLength = Integer.parseInt(builder.toString());
+            return type.deserialize(new DataInputStream(inflaterInputStream));
+        }
     }
 }

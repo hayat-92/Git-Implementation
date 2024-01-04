@@ -15,6 +15,7 @@ public class Main {
             case "cat-file" -> handler.catFile(args[2]);
             case "hash-object" -> handler.hashFile(args[2]);
             case "ls-tree" -> handler.lsTree(args[2]);
+            case "write-tree" -> handler.writeTree();
             default -> System.out.println("Unknown command: " + command);
         }
     }

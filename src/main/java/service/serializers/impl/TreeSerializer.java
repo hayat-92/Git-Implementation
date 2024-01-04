@@ -1,5 +1,7 @@
 package service.serializers.impl;
 
+import service.mode.TreeEntryMode;
+import service.mode.TreeEntryModeType;
 import service.objects.Tree;
 import service.entry.TreeEntry;
 import service.serializers.ObjectSerializer;
@@ -19,9 +21,9 @@ public class TreeSerializer implements ObjectSerializer<Tree> {
         }
     }
 
-    public void serializeEntry(TreeEntry entry, DataOutputStream dataOutputStream)
+    public static void serializeEntry(TreeEntry entry, DataOutputStream dataOutputStream)
             throws IOException {
-        dataOutputStream.write(entry.mode().getBytes());
+        dataOutputStream.write(entry.mode().format().getBytes());
         dataOutputStream.write(' ');
         dataOutputStream.write(entry.name().getBytes());
         dataOutputStream.write('\0');
@@ -38,7 +40,7 @@ public class TreeSerializer implements ObjectSerializer<Tree> {
         return new Tree(Collections.unmodifiableList(entries));
     }
 
-    public TreeEntry deserializeEntry(DataInputStream dataInputStream)
+    public static TreeEntry deserializeEntry(DataInputStream dataInputStream)
             throws IOException {
         final var builder = new StringBuilder();
         int value;
@@ -48,7 +50,8 @@ public class TreeSerializer implements ObjectSerializer<Tree> {
         if (value == -1) {
             return null;
         }
-        final var mode = builder.toString();
+//        final var mode = builder.toString();
+        var mode =deserializeEntryMode(builder.toString());
         builder.setLength(0);
         while ((value = dataInputStream.read()) > 0) {
             builder.append((char) value);
@@ -62,5 +65,12 @@ public class TreeSerializer implements ObjectSerializer<Tree> {
             return null;
         }
         return new TreeEntry(mode, name, hash);
+    }
+
+    public static TreeEntryMode deserializeEntryMode(String mode) {
+        var value = Integer.parseInt(mode, 8);
+        var type = TreeEntryModeType.match(value);
+        var permission = value & 0b0_111_111_111;
+        return new TreeEntryMode(type, permission);
     }
 }

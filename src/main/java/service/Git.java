@@ -1,13 +1,21 @@
 package service;
 
-import service.objects.Object;
+import service.entry.TreeEntry;
+import service.mode.TreeEntryMode;
+import service.objects.Blob;
+import service.objects.Tree;
+import service.platform.Platform;
 import service.types.ObjectType;
+
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Path;
 
 import java.io.*;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
+import java.util.*;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 import java.nio.file.Files;
@@ -15,131 +23,74 @@ import java.nio.file.Files;
 public class Git {
 
     private static final byte[] OBJECT_TYPE_BLOB = "blob".getBytes();
+    public static HexFormat HEX = HexFormat.of();
+    public static final Set<Path> FORBIDDEN_DIRS = Set.of(
+            Paths.get(".git")
+    );
     private static final byte[] SPACE = " ".getBytes();
     private static final byte[] NULL = {0};
-    private final File root;
+    private final Path root;
 
-    Git(File root) {
+    Git(Path root) {
         this.root = root;
     }
 
-    public File getDotGit() {
-        return new File(root, ".git");
+    public Path getDotGit() {
+        return root.resolve(".git");
     }
 
-    public File getObjectsDirectory() {
-        return new File(getDotGit(), "objects");
+    public Path getObjectsDirectory() {
+        return getDotGit().resolve("objects");
     }
 
-    public File getRefsDirectory() {
-        return new File(getDotGit(), "refs");
+    public Path getRefsDirectory() {
+        return getDotGit().resolve("refs");
     }
 
-    public File getHeadFile() {
-        return new File(getDotGit(), "HEAD");
+    public Path getHeadFile() {
+        return getDotGit().resolve("HEAD");
     }
 
-    public byte[] catFile(String hash) throws FileNotFoundException, IOException {
-        var firstTwo = hash.substring(0, 2);
-        var rest = hash.substring(2);
-
-        var file = Paths.get(getObjectsDirectory().getPath(), firstTwo, rest).toFile();
-
-
-        try (
-                var inputStream = new FileInputStream(file);
-                var inflaterInputStream = new InflaterInputStream(inputStream);
-        ) {
-            var builder = new StringBuilder();
-
-            int value;
-            while ((value = inflaterInputStream.read()) != -1 && value != ' ') {
-                builder.append((char) value);
-            }
-
-            var type = builder.toString();
-
-            builder = new StringBuilder();
-            while ((value = inflaterInputStream.read()) != -1 && value != 0) {
-                builder.append((char) value);
-            }
-
-            var objectLength = Integer.parseInt(builder.toString());
-            return inflaterInputStream.readAllBytes();
-        }
+    public Path getConfigFile() {
+        return getDotGit().resolve("config");
     }
 
 
-    public static Git init(File file) throws IOException {
-        var git = new Git(file);
+    public static Git init(Path root) throws IOException {
+        var git = new Git(root);
         var dotGit = git.getDotGit();
-        if (dotGit.exists()) {
-            throw new IOException("Git repository already exists at " + file.getAbsolutePath());
+        if (Files.exists(dotGit)) {
+            throw new FileAlreadyExistsException(dotGit.toString());
         }
 
-        git.getObjectsDirectory().mkdirs();
-        git.getRefsDirectory().mkdirs();
+        Files.createDirectories(git.getObjectsDirectory());
+        Files.createDirectories(git.getRefsDirectory());
 
         var head = git.getHeadFile();
-        head.createNewFile();
-        Files.write(head.toPath(), "ref: refs/heads/master\n".getBytes());
+        Files.createFile(head);
+        Files.write(head, "ref: refs/heads/master\n".getBytes());
+
+        var config = git.getConfigFile();
+        Files.createFile(config);
+        Files.write(config, "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = false\n".getBytes());
 
         return git;
     }
 
 
-    public static Git open(File file) throws IOException {
-        var git = new Git(file);
+    public static Git open(Path root) throws IOException {
+        var git = new Git(root);
         var dotGit = git.getDotGit();
-        if (!dotGit.exists()) {
-            throw new IOException("No Git repository found at " + file.getAbsolutePath());
+        if (!Files.exists(dotGit)) {
+            throw new FileNotFoundException(dotGit.toString());
         }
 
         return git;
-    }
-
-    public String hashFile(File File) throws IOException, NoSuchAlgorithmException {
-        try (
-                var inputStream = new FileInputStream(File);
-        ) {
-            return hashFile(inputStream.readAllBytes());
-        }
-    }
-
-    public String hashFile(byte[] bytes) throws IOException, NoSuchAlgorithmException {
-        var lengthBytes = String.valueOf(bytes.length).getBytes();
-        var message = MessageDigest.getInstance("SHA-1");
-        message.update(OBJECT_TYPE_BLOB);
-        message.update(SPACE);
-        message.update(lengthBytes);
-        message.update(NULL);
-        message.update(bytes);
-
-
-        var hashBytes = message.digest();
-        var hash = HexFormat.of().formatHex(hashBytes);
-
-        var firstTwo = hash.substring(0, 2);
-        var rest = hash.substring(2);
-        var firstTwoPath = Paths.get(getObjectsDirectory().getPath(), firstTwo).toFile();
-        firstTwoPath.mkdirs();
-        var restPath = Paths.get(firstTwoPath.getPath(), rest).toFile();
-        try (
-                var outputStream = Files.newOutputStream(restPath.toPath());
-                var deflaterOutputStream = new DeflaterOutputStream(outputStream);
-        ) {
-            deflaterOutputStream.write(OBJECT_TYPE_BLOB);
-            deflaterOutputStream.write(SPACE);
-            deflaterOutputStream.write(lengthBytes);
-            deflaterOutputStream.write(NULL);
-            deflaterOutputStream.write(bytes);
-        }
-        return hash;
-
     }
 
     public String writeOject(service.objects.Object object) throws IOException, NoSuchAlgorithmException {
         var objectType = ObjectType.byClass(object.getClass());
+        var objectTypeBytes = objectType.getName().getBytes();
         var tempPath = Files.createTempFile("temp-", ".temp");
 
         try {
@@ -154,7 +105,7 @@ public class Git {
             var lengthBytes = String.valueOf(length).getBytes();
 
             var message = MessageDigest.getInstance("SHA-1");
-            message.update(objectType.getName().getBytes());
+            message.update(objectTypeBytes);
             message.update(SPACE);
             message.update(lengthBytes);
             message.update(NULL);
@@ -173,7 +124,7 @@ public class Git {
             var hashBytes = message.digest();
             var hash = HexFormat.of().formatHex(hashBytes);
             var firstTwo = hash.substring(0, 2);
-            var firstTwoDirectory = new File(getObjectsDirectory(), firstTwo);
+            var firstTwoDirectory = new File(getObjectsDirectory().toFile(), firstTwo);
             firstTwoDirectory.mkdirs();
             var rest = hash.substring(2);
             var restFile = new File(firstTwoDirectory, rest);
@@ -183,7 +134,7 @@ public class Git {
                     var deflaterOutputStream = new DeflaterOutputStream(outputStream);
                     var inputStream = Files.newInputStream(tempPath);
             ) {
-                deflaterOutputStream.write(OBJECT_TYPE_BLOB);
+                deflaterOutputStream.write(objectTypeBytes);
                 deflaterOutputStream.write(SPACE);
                 deflaterOutputStream.write(lengthBytes);
                 deflaterOutputStream.write(NULL);
@@ -198,14 +149,14 @@ public class Git {
 
     }
 
-    public service.objects.Object getObject(String hash) throws IOException, NoSuchAlgorithmException {
+    public service.objects.Object readObject(String hash) throws IOException, NoSuchAlgorithmException {
         var firstTwo = hash.substring(0, 2);
         var rest = hash.substring(2);
 
-        var file = Paths.get(getObjectsDirectory().getPath(), firstTwo, rest).toFile();
+        var path = getObjectsDirectory().resolve(firstTwo).resolve(rest);
 
         try (
-                var inputStream = new FileInputStream(file);
+                var inputStream = new FileInputStream(path.toFile());
                 var inflaterInputStream = new InflaterInputStream(inputStream);
         ) {
             var builder = new StringBuilder();
@@ -226,4 +177,55 @@ public class Git {
             return type.deserialize(new DataInputStream(inflaterInputStream));
         }
     }
+
+    public String writeBlob(Path path) throws IOException, NoSuchAlgorithmException {
+        var bytes = Files.readAllBytes(path);
+        var blob = new Blob(bytes);
+        return writeOject(blob);
+
+    }
+
+    public String writeTree(Path root) throws IOException, NoSuchAlgorithmException {
+        var file = Files.list(root);
+        var filenames = file.map(Path::getFileName);
+        var filteredFileNames = filenames.filter(filename -> !FORBIDDEN_DIRS.contains(filename)).toList();
+
+        var entries = new ArrayList<TreeEntry>();
+        for (var filename : filteredFileNames) {
+            var path = root.resolve(filename);
+            String hashString;
+            TreeEntryMode mode;
+            if (Files.isDirectory(path)) {
+                hashString = writeTree(path);
+                mode = TreeEntryMode.directory();
+            } else if (Files.isRegularFile(path)) {
+                hashString = writeBlob(path);
+                if (Platform.isWindows()) {
+                    mode = TreeEntryMode.regularFile(0644);
+                } else {
+                    var attributes = Files.readAttributes(path, PosixFileAttributes.class);
+                    mode = TreeEntryMode.regularFile(attributes);
+                }
+            } else {
+                continue;
+            }
+            var hash = HEX.parseHex(hashString);
+            entries.add(new TreeEntry(mode, filename.toString(), hash));
+        }
+        Collections.sort(entries);
+        var tree = new Tree(entries);
+        return writeOject(tree);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+

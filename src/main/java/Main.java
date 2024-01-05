@@ -16,6 +16,7 @@ public class Main {
             case "hash-object" -> handler.hashFile(args[2]);
             case "ls-tree" -> handler.lsTree(args[2]);
             case "write-tree" -> handler.writeTree();
+            case "commit-tree" -> handler.commitTree(args[1], args[3], args[5]);
             default -> System.out.println("Unknown command: " + command);
         }
     }

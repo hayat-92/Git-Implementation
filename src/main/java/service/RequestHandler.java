@@ -1,5 +1,6 @@
 package service;
 
+import service.author.AuthorSignature;
 import service.objects.Blob;
 import service.objects.Tree;
 
@@ -9,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.time.ZonedDateTime;
 
 public class RequestHandler {
 
@@ -44,6 +46,13 @@ public class RequestHandler {
     public void writeTree() throws IOException, NoSuchAlgorithmException {
         final var git = Git.open(HERE);
         var hash = git.writeTree(HERE);
+        System.out.println(hash);
+    }
+
+    public static void commitTree(String treeHash, String parentHash, String message) throws IOException, NoSuchAlgorithmException {
+        final var git = Git.open(HERE);
+        var author = new AuthorSignature("Faisal", "faisal.hassan@1831@gmail.com", ZonedDateTime.now());
+        var hash = git.writeCommit(treeHash, parentHash, author, message);
         System.out.println(hash);
     }
 

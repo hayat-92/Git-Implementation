@@ -1,8 +1,10 @@
 package service;
 
+import service.author.AuthorSignature;
 import service.entry.TreeEntry;
 import service.mode.TreeEntryMode;
 import service.objects.Blob;
+import service.objects.Commit;
 import service.objects.Tree;
 import service.platform.Platform;
 import service.types.ObjectType;
@@ -215,6 +217,11 @@ public class Git {
         Collections.sort(entries);
         var tree = new Tree(entries);
         return writeOject(tree);
+    }
+
+    public String writeCommit(String treeHash, String parentHash, AuthorSignature author, String message) throws IOException, NoSuchAlgorithmException {
+        var commit = new Commit(treeHash, parentHash, author, author, message);
+        return writeOject(commit);
     }
 }
 

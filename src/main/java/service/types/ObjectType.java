@@ -1,10 +1,12 @@
 package service.types;
 
 import service.objects.Blob;
+import service.objects.Commit;
 import service.objects.Object;
 import service.objects.Tree;
 import service.serializers.impl.BlobSerializer;
 import service.serializers.ObjectSerializer;
+import service.serializers.impl.CommitSerializer;
 import service.serializers.impl.TreeSerializer;
 
 import java.io.DataInputStream;
@@ -16,8 +18,9 @@ import java.util.List;
 public class ObjectType<T extends Object> {
     public static final ObjectType<Blob> BLOB = new ObjectType<>("blob", Blob.class, new BlobSerializer());
     public static final ObjectType<Tree> TREE = new ObjectType<>("tree", Tree.class, new TreeSerializer());
+    public static final ObjectType<Commit> COMMIT = new ObjectType<>("commit", Commit.class, new CommitSerializer());
 
-    public static final Collection<ObjectType<?>> TYPES = List.of(BLOB, TREE);
+    public static final Collection<ObjectType<?>> TYPES = List.of(BLOB, TREE, COMMIT);
 
     private String name;
     private Class<T> clazz;

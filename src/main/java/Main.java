@@ -5,7 +5,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class Main {
-//    hh
 
     static RequestHandler handler = new RequestHandler();
 

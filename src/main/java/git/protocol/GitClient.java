@@ -29,7 +29,7 @@ public class GitClient {
                                 .newBuilder()
                                 .addPathSegment("info")
                                 .addPathSegment("refs")
-                                .addQueryParameter("git", "git-upload-pack")
+                                .addQueryParameter("service", "git-upload-pack")
                                 .build())
                         .get()
                         .build();
@@ -38,7 +38,7 @@ public class GitClient {
              final var inputStream = responseBody.byteStream();) {
             if (!response.isSuccessful()) {
                 throw new IllegalStateException("response is not successful: " +
-                        response.code());
+                        response.code()+response.message());
             }
             final var lines = parsePacketLines(inputStream);
             for (final var line : lines) {

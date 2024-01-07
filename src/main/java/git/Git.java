@@ -68,7 +68,7 @@ public class Git {
         return getDotGit().resolve("config");
     }
 
-    public Blob readBlob(String hash) throws IOException, NoSuchAlgorithmException {
+    public Blob readBlob(String hash) throws IOException, FileNotFoundException {
         return readObject(ObjectType.BLOB, hash);
     }
 

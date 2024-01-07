@@ -237,7 +237,7 @@ public class Git {
                 mode = TreeEntryMode.directory();
             } else if (Files.isRegularFile(path)) {
 //                hashString = writeBlob(path);
-                hash = writeTree(path);
+                hash = writeBlob(path);
                 if (Platform.isWindows()) {
                     mode = TreeEntryMode.regularFile(0644);
                 } else {

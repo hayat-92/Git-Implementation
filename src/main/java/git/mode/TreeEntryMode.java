@@ -1,4 +1,4 @@
-package service.mode;
+package git.mode;
 
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;

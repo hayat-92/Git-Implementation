@@ -1,4 +1,4 @@
-package service.author;
+package git.domain;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;

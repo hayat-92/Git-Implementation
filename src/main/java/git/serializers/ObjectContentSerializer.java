@@ -1,12 +1,12 @@
-package service.serializers;
+package git.serializers;
 
-import service.objects.Object;
+import git.domain.GitObject;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public interface ObjectSerializer <T extends Object>{
+public interface ObjectContentSerializer<T extends GitObject>{
     void serialize(T object, DataOutputStream dataOutputStream) throws IOException;
     T deserialize(DataInputStream dataInputStream) throws IOException;
 }

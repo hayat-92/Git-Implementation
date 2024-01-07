@@ -1,18 +1,19 @@
-package service.serializers.impl;
+package git.serializers.impl;
 
-import service.mode.TreeEntryMode;
-import service.mode.TreeEntryModeType;
-import service.objects.Tree;
-import service.entry.TreeEntry;
-import service.serializers.ObjectSerializer;
+import git.mode.TreeEntryMode;
+import git.mode.TreeEntryModeType;
+import git.domain.Tree;
+import git.entry.TreeEntry;
+import git.serializers.ObjectContentSerializer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
-public class TreeSerializer implements ObjectSerializer<Tree> {
+public class TreeSerializer implements ObjectContentSerializer<Tree> {
     @Override
     public void serialize(Tree tree, DataOutputStream dataOutputStream)
             throws IOException {
@@ -21,14 +22,14 @@ public class TreeSerializer implements ObjectSerializer<Tree> {
         }
     }
 
-    public static void serializeEntry(TreeEntry entry, DataOutputStream dataOutputStream)
-            throws IOException {
-        dataOutputStream.write(entry.mode().format().getBytes());
-        dataOutputStream.write(' ');
-        dataOutputStream.write(entry.name().getBytes());
-        dataOutputStream.write('\0');
-        dataOutputStream.write(entry.hash());
-    }
+//    public static void serializeEntry(TreeEntry entry, DataOutputStream dataOutputStream)
+//            throws IOException {
+//        dataOutputStream.write(entry.mode().format().getBytes());
+//        dataOutputStream.write(' ');
+//        dataOutputStream.write(entry.name().getBytes());
+//        dataOutputStream.write('\0');
+//        dataOutputStream.write(entry.hash());
+//    }
 
     @Override
     public Tree deserialize(DataInputStream dataInputStream) throws IOException {
@@ -64,7 +65,7 @@ public class TreeSerializer implements ObjectSerializer<Tree> {
         if (hash.length != 20) {
             return null;
         }
-        return new TreeEntry(mode, name, hash);
+        return new TreeEntry(mode, name, Arrays.toString(hash));
     }
 
     public static TreeEntryMode deserializeEntryMode(String mode) {

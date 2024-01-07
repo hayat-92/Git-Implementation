@@ -1,13 +1,13 @@
-package service.serializers.impl;
+package git.serializers.impl;
 
-import service.objects.Blob;
-import service.serializers.ObjectSerializer;
+import git.domain.Blob;
+import git.serializers.ObjectContentSerializer;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class BlobSerializer implements ObjectSerializer<Blob> {
+public class BlobSerializer implements ObjectContentSerializer<Blob> {
     @Override
     public void serialize(Blob blob, DataOutputStream dataOutputStream)
             throws IOException {

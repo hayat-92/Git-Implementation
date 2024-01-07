@@ -1,16 +1,14 @@
-package service;
+package git;
 
-import service.author.AuthorSignature;
-import service.objects.Blob;
-import service.objects.Tree;
+import git.domain.AuthorSignature;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
+import java.util.zip.DataFormatException;
 
 public class RequestHandler {
 
@@ -24,7 +22,8 @@ public class RequestHandler {
 
     public void catFile(String hash) throws IOException, NoSuchAlgorithmException {
         final var git = Git.open(HERE);
-        var blob = (Blob) git.readObject(hash);
+//        var blob = (Blob) git.readObject(hash);
+        var blob = git.readBlob(hash);
         System.out.writeBytes(blob.data());
     }
 
@@ -37,7 +36,8 @@ public class RequestHandler {
 
     public void lsTree(String hash) throws IOException, NoSuchAlgorithmException {
         final var git = Git.open(HERE);
-        var tree = (Tree) git.readObject(hash);
+//        var tree = (Tree) git.readObject(hash);
+        var tree = git.readTree(hash);
         for (var entry : tree.entries()) {
             System.out.println(entry.name());
         }
@@ -54,6 +54,11 @@ public class RequestHandler {
         var author = new AuthorSignature("Faisal", "faisal.hassan@1831@gmail.com", ZonedDateTime.now());
         var hash = git.writeCommit(treeHash, parentHash, author, message);
         System.out.println(hash);
+    }
+
+    public static void clone(String url, String directory) throws IOException, NoSuchAlgorithmException, DataFormatException {
+        Git.clone(URI.create(url), Paths.get(directory));
+        System.out.println("Cloned git respository");
     }
 
 }

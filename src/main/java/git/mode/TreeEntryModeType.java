@@ -1,4 +1,4 @@
-package service.mode;
+package git.mode;
 
 public enum TreeEntryModeType {
     DIRECTORY(0b0100),

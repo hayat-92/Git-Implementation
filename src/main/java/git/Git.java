@@ -247,8 +247,8 @@ public class Git {
             } else {
                 continue;
             }
-//            var hash = HEX.parseHex(hashString);
-            entries.add(new TreeEntry(mode, filename.toString(), hash));
+            var hashx = HEX.parseHex(hash);
+            entries.add(new TreeEntry(mode, filename.toString(), Arrays.toString(hashx)));
         }
         Collections.sort(entries);
 //        hi

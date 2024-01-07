@@ -1,5 +1,3 @@
-package git;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -8,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.zip.DataFormatException;
 
+import git.Git;
 import git.domain.AuthorSignature;
 
 public class Main {

@@ -9,7 +9,6 @@ public class Main {
     static RequestHandler handler = new RequestHandler();
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, DataFormatException {
-        System.out.println("Hello, world!"+args.length);
         final var command = args[0];
         switch (command) {
             case "init" -> handler.init();

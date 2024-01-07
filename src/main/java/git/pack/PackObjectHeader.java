@@ -1,3 +1,6 @@
 package git.pack;
 
-public record PackObjectHeader(PackObjectType type, int size) {}
+public record PackObjectHeader(
+        PackObjectType type,
+        int size
+) {}

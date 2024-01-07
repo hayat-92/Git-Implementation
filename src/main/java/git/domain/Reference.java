@@ -1,3 +1,6 @@
 package git.domain;
 
-public record Reference(String name, String hash) {}
+public record Reference(
+        String name,
+        String hash
+) {}

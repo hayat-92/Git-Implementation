@@ -1,4 +1,5 @@
 package git.domain;
 
-public record Blob(byte[] data) implements GitObject {
-}
+public record Blob(
+        byte[] data
+) implements GitObject {}
